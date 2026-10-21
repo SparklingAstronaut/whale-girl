@@ -1,9 +1,10 @@
 {
   "name": "whale-girl",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "DSH Web GUI 内的桌面宠物（QQ 宠物形态）",
   "main": "lib/index.mjs",
+  "icon": "./icon.svg",
   "files": [
     "lib/index.mjs",
     "lib/client.js",
@@ -12,6 +13,7 @@
     "lib/assets/characters",
     "lib/assets/manifest.json",
     "cordis.patch.yml",
+    "icon.svg",
     "README.zh.md"
   ],
   "exports": {
