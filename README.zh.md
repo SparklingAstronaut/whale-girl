@@ -1,3 +1,5 @@
+> **Harness desktop integration fork:** [安装与说明 / Setup](harness-integration/README.md).
+
 <p align="center">中文 | <a href="README.md">English</a></p>
 
 <h1 align="center">whale-girl</h1>
