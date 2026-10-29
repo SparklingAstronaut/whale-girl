@@ -30,11 +30,11 @@ function boot(){
 
 test('plugin metadata: only webServer is required; whale-girl is no longer a hard dependency',()=>{
  assert.deepEqual(inject,['webServer']);
- assert.equal(version,'1.1.5');
+ assert.equal(version,'1.1.6');
 });
 
 test('client status validation rejects malformed payloads',()=>{
- assert.deepEqual(normalizeClient({loaded:true,menu:'ok',version:'1.1.5',lang:'zh',at:1}),{loaded:true,menu:'ok',version:'1.1.5',lang:'zh',at:1});
+ assert.deepEqual(normalizeClient({loaded:true,menu:'ok',version:'1.1.6',lang:'zh',at:1}),{loaded:true,menu:'ok',version:'1.1.6',lang:'zh',at:1});
  assert.throws(()=>normalizeClient({menu:'nope'}),/Invalid client\.menu/);
  assert.throws(()=>normalizeClient({loaded:'yes'}),/Invalid client\.loaded/);
  assert.throws(()=>normalizeClient(null),/Invalid client status/);
@@ -48,7 +48,7 @@ test('GET status is readable and reports client diagnostics',async()=>{
   assert.equal(res.result.status,200);
   const body=await readBody(res);
   assert.equal(body.running,false);
-  assert.equal(body.version,'1.1.5');
+  assert.equal(body.version,'1.1.6');
   assert.deepEqual(body.client,{loaded:false,menu:'unknown',version:'',lang:'',at:0});
  } finally { cleanup(); }
 });
@@ -57,14 +57,14 @@ test('client heartbeat is accepted, persisted in memory and never persisted to d
  const {handler,cleanup}=boot();
  try{
   const post=makeRes();
-  await handler()(makeReq('POST',{client:{loaded:true,menu:'ok',version:'1.1.5',lang:'zh',at:1}}),post);
+  await handler()(makeReq('POST',{client:{loaded:true,menu:'ok',version:'1.1.6',lang:'zh',at:1}}),post);
   assert.equal(post.result.status,200);
   const get=makeRes();
   await handler()(makeReq('GET'),get);
   const body=await readBody(get);
   assert.equal(body.client.loaded,true);
   assert.equal(body.client.menu,'ok');
-  assert.equal(body.client.version,'1.1.5');
+  assert.equal(body.client.version,'1.1.6');
  } finally { cleanup(); }
 });
 
@@ -117,7 +117,7 @@ test('the current port is published to host.json for the health check',async()=>
   const file=join(sandbox,'Programs','WhaleGirlDesktop','host.json');
   assert.ok(existsSync(file),'host.json should exist');
   const info=JSON.parse(readFileSync(file,'utf8'));
-  assert.equal(info.port,4321);assert.equal(info.pid,process.pid);assert.equal(info.version,'1.1.5');
+  assert.equal(info.port,4321);assert.equal(info.pid,process.pid);assert.equal(info.version,'1.1.6');
  } finally { cleanup(); }
 });
 

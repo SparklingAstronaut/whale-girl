@@ -1,20 +1,22 @@
 window.__ModuleLoader__.load({id:'dsh-whale-desktop-integration',factory:(require)=>{
  const React=require('react'),h=React.createElement;
- const VERSION='1.1.5',NAME='whale-desktop-integration',NS='settings.whale-desktop';
+ // DSH 官方界面组件：从平台内置的组件表按需取用（无需在 package.json 声明依赖）；取不到就用自绘控件
+ let UI=null;try{UI=require('@deepseek-ai/dsh-client-ui-primitives');}catch(_){UI=null;}
+ const VERSION='1.1.6',NAME='whale-desktop-integration',NS='settings.whale-desktop';
  // v1.1.1：按用户要求移除“账号菜单注入”这个最容易随 DSH 界面变化而失效的入口。
  // 现在只有两个官方槽入口：设置 → 虚拟宠物（settings.section）与侧栏底部鲸鱼按钮（sidebar.footer.action）。
  // 任何一步失败都不影响另一个入口和桌宠本体；locale 服务存在时自动中英文切换。
  const zh={
   nav:'虚拟宠物',title:'虚拟宠物',intro:'鲸鱼娘陪你一起工作。记住显示状态，随 Harness 启动和退出。',
   show:'显示虚拟宠物',hide:'隐藏虚拟宠物',pet:'鲸鱼娘',size:'宠物大小',position:'桌面位置',reset:'恢复默认位置',
-  statusShown:'已显示在桌面',statusStarting:'正在启动…',statusHidden:'已隐藏',hint:'拖动可移动位置；单击可投喂或玩耍。也可以点左下侧栏的鲸鱼按钮快速显示或隐藏。',
+  statusShown:'已显示在桌面',statusStarting:'正在启动…',statusHidden:'已隐藏',hint:'单击桌宠打开喂食 / 玩耍菜单，悬停查看等级；左下侧栏的鲸鱼按钮也能快速开关。',rowShow:'显示桌宠',sizeDesc:'桌宠在桌面上的显示大小',positionDesc:'拖动桌宠可随时移动；点按钮回到屏幕右下角',
   size110:'小',size140:'适中',size180:'大',size220:'特大',connectFail:'桌宠连接暂不可用（Harness 插件可能未启用或正在启动）',
   diag:'客户端界面：正常',footerHint:'显示/隐藏鲸鱼娘桌宠'
  };
  const en={
   nav:'Virtual pet',title:'Virtual pet',intro:'The whale girl works with you. The visibility is remembered across Harness restarts.',
   show:'Show virtual pet',hide:'Hide virtual pet',pet:'Whale girl',size:'Pet size',position:'Desktop position',reset:'Reset position',
-  statusShown:'Shown on the desktop',statusStarting:'Starting…',statusHidden:'Hidden',hint:'Drag to move; click to feed or play. You can also toggle it from the whale button at the lower-left sidebar.',
+  statusShown:'Shown on the desktop',statusStarting:'Starting…',statusHidden:'Hidden',hint:'Click the pet for the feed / play menu and hover to see its level; the whale button in the lower-left sidebar toggles it too.',rowShow:'Show desktop pet',sizeDesc:'How large the pet appears on your desktop',positionDesc:'Drag the pet to move it anytime; reset puts it back at the lower-right corner',
   size110:'Small',size140:'Medium',size180:'Large',size220:'Extra large',connectFail:'Desktop pet unavailable (plugin disabled or still starting)',
   diag:'Client UI: ready',footerHint:'Show or hide the whale girl desktop pet'
  };
@@ -48,10 +50,10 @@ window.__ModuleLoader__.load({id:'dsh-whale-desktop-integration',factory:(requir
    const reportClient=()=>{ if(disposed)return; const now=Date.now(); if(now-reportAt<1500)return; reportAt=now; try{
     const lang=(document.documentElement&&document.documentElement.lang)||navigator.language||'';
     // menu: 'unsupported' 表示“已按设计不注入账号菜单”，让自检脚本不要把默认行为当成降级
-    request({client:{loaded:true,version:VERSION,menu:'unsupported',lang:String(lang).slice(0,16),at:now}}).catch(()=>{});
+    request({client:{loaded:true,version:VERSION,menu:'unsupported',ui:uiMode,lang:String(lang).slice(0,16),at:now}}).catch(()=>{});
    }catch(_){}};
    const style=document.createElement('style'); style.dataset.whaleDesktop='true';
-   style.textContent=`[data-whale-girl]{display:none!important}.wg-settings{color:var(--dsw-alias-label-primary);font:14px/1.6 system-ui}.wg-settings h2{font-size:23px;margin:0 0 8px}.wg-settings p{color:var(--dsw-alias-label-secondary);margin:0 0 20px}.wg-card{padding:22px;border:1px solid var(--dsw-alias-border-main, #5555);border-radius:14px;margin:16px 0}.wg-row{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:16px 0}.wg-button{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover,#7773);border:1px solid #8884;border-radius:9px;padding:7px 14px;font:inherit;cursor:pointer}.wg-settings option{background:#292a2c;color:#f4f4f5}.wg-button:disabled{opacity:.5;cursor:wait}.wg-preview{height:150px;width:150px;background-image:url('/whale-girl/assets/characters/whale-girl/idle.png');background-size:450px 150px;background-repeat:no-repeat;margin:auto}.wg-status{font-size:12px;color:var(--dsw-alias-label-secondary)}.wg-error{color:#f99;margin-top:12px}.wg-footer-action{display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;color:var(--dsw-alias-label-secondary);background:0 0;border:0;border-radius:var(--dsw-radius-md);cursor:pointer;font:inherit}.wg-footer-action:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.wg-footer-action[data-wg-visible=true]{color:var(--dsw-alias-state-business-primary)}.wg-footer-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}`;
+   style.textContent=`[data-whale-girl]{display:none!important}.wg-settings{max-width:760px;color:var(--dsw-alias-label-primary);display:flex;flex-direction:column}.wg-heading{margin:0;font-size:18px;font-weight:600;line-height:1.4}.wg-intro{color:var(--dsw-alias-label-tertiary);margin:6px 0 4px;font-size:13px;line-height:1.5}.wg-row{border-bottom:.5px solid var(--dsw-alias-border-l2,#8883);justify-content:space-between;align-items:center;gap:24px;padding:16px 0;display:flex}.wg-row-main{display:flex;align-items:center;gap:12px;min-width:0}.wg-row-title{font-size:14px;line-height:20px}.wg-row-desc{color:var(--dsw-alias-label-secondary);margin-top:4px;font-size:12px;line-height:18px}.wg-row-control{flex:none}.wg-thumb{flex:none;width:44px;height:44px;border-radius:10px;background-color:var(--dsw-alias-interactive-bg-hover,#7772);background-image:url('/whale-girl/assets/characters/whale-girl/idle.png');background-size:132px 44px;background-repeat:no-repeat;background-position:0 0}.wg-error{color:var(--dsw-alias-state-danger-primary,#f66);font-size:12px;line-height:18px;margin-top:12px}.wg-foot{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px;margin:14px 0 0}.wg-button{color:var(--dsw-alias-label-primary);background:transparent;border:1px solid var(--dsw-alias-border-l2,#8885);border-radius:8px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}.wg-button:disabled{opacity:.5;cursor:default}.wg-select option{background:#292a2c;color:#f4f4f5}.wg-footer-action{display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;color:var(--dsw-alias-label-secondary);background:0 0;border:0;border-radius:var(--dsw-radius-md);cursor:pointer;font:inherit}.wg-footer-action:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.wg-footer-action[data-wg-visible=true]{color:var(--dsw-alias-state-business-primary)}.wg-footer-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}`;
    style.textContent+=`[data-whale-pet-nav] svg{background:currentColor;mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%222%202%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%2012a7%207%200%200%201%2014%200v5a2%202%200%200%201-3.4%201.4L14%2020l-2-1.6L10%2020l-1.6-1.6A2%202%200%200%201%205%2017Z%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2212%22%20r%3D%22.9%22%20fill%3D%22black%22%20stroke%3D%22none%22%2F%3E%3Ccircle%20cx%3D%2215%22%20cy%3D%2212%22%20r%3D%22.9%22%20fill%3D%22black%22%20stroke%3D%22none%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat}[data-whale-pet-nav] svg>*{visibility:hidden}`;
    document.head.append(style);
    // 保留的唯一 DOM 操作：设置弹窗侧栏里给我们自己那一项加个小鲸鱼图标（纯装饰，失败静默跳过）
@@ -70,24 +72,40 @@ window.__ModuleLoader__.load({id:'dsh-whale-desktop-integration',factory:(requir
    let observer=null;
    try{ observer=new MutationObserver(()=>syncDom()); observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-expanded','data-shortcut-modal']}); }catch(_){ observer=null; }
 
-   // 官方槽 1：设置 → 虚拟宠物（不依赖任何 DOM 结构）
+   // 官方槽 1：设置 → 虚拟宠物。布局与 DSH 官方设置页一致（标题 + 说明 + 每项一行），
+   // 控件优先用 DSH 自带的 Switch / SegmentedControl / Button；拿不到时退回自绘控件，页面照常可用。
+   const isComponent=(value)=>typeof value==='function'||(typeof value==='object'&&value!==null);
+   const OfficialSwitch=UI&&isComponent(UI.Switch)?UI.Switch:null;
+   const OfficialSegmented=UI&&isComponent(UI.SegmentedControl)?UI.SegmentedControl:null;
+   const OfficialButton=UI&&isComponent(UI.Button)?UI.Button:null;
+   const uiMode=OfficialSwitch&&OfficialSegmented&&OfficialButton?'official':(OfficialSwitch||OfficialSegmented||OfficialButton?'partial':'fallback');
+   const SIZES=[110,140,180,220];
+   const Row=({title,desc,lead,children})=>h('div',{className:'wg-row'},
+    h('div',{className:'wg-row-main'},lead||null,h('div',null,h('div',{className:'wg-row-title'},title),desc?h('div',{className:'wg-row-desc'},desc):null)),
+    h('div',{className:'wg-row-control'},children));
    const Panel=()=>{
     const [,force]=React.useReducer(n=>n+1,0);
     React.useEffect(()=>{const off=store.subscribe(force);refresh();return()=>off();},[]);
     const current=store.snapshot();
-    const sizeLabel={110:t('size110'),140:t('size140'),180:t('size180'),220:t('size220')};
-    return h('section',{className:'wg-settings'},
-     h('h2',null,t('title')),
-     h('p',null,t('intro')),
-     h('div',{className:'wg-card'},
-      h('div',{className:'wg-preview',role:'img','aria-label':t('pet')}),
-      h('div',{className:'wg-row'},h('strong',null,t('pet')),h('button',{className:'wg-button',disabled:current.busy,onClick:()=>change({visible:!current.visible})},current.visible?t('hide'):t('show'))),
-      h('div',{className:'wg-status'},current.running?t('statusShown'):current.visible?t('statusStarting'):t('statusHidden'))),
-     h('div',{className:'wg-row'},h('label',{htmlFor:'wg-desktop-size'},t('size')),h('select',{id:'wg-desktop-size',className:'wg-button',value:current.size,disabled:current.busy,onChange:e=>change({size:Number(e.target.value)})},[110,140,180,220].map(size=>h('option',{value:size,key:size},sizeLabel[size])))),
-     h('div',{className:'wg-row'},h('span',null,t('position')),h('button',{className:'wg-button',disabled:current.busy,onClick:()=>change({reset:true})},t('reset'))),
-     h('p',null,t('hint')),
-     current.error&&h('div',{className:'wg-error',role:'alert'},current.error),
-     h('p',{className:'wg-status'},t('diag')+' · v'+VERSION));
+    const status=current.running?t('statusShown'):current.visible?t('statusStarting'):t('statusHidden');
+    const toggle=(next)=>change({visible:!!next});
+    const visibility=OfficialSwitch
+     ?h(OfficialSwitch,{checked:!!current.visible,label:t('rowShow'),disabled:current.busy,onChange:toggle})
+     :h('button',{type:'button',className:'wg-button',role:'switch','aria-checked':current.visible?'true':'false',disabled:current.busy,onClick:()=>toggle(!current.visible)},current.visible?t('hide'):t('show'));
+    const size=OfficialSegmented
+     ?h(OfficialSegmented,{id:'wg-desktop-size',label:t('size'),value:String(current.size),disabled:current.busy,options:SIZES.map(s=>({value:String(s),label:t('size'+s)})),onChange:(next)=>change({size:Number(next)})})
+     :h('select',{id:'wg-desktop-size',className:'wg-button wg-select','aria-label':t('size'),value:current.size,disabled:current.busy,onChange:e=>change({size:Number(e.target.value)})},SIZES.map(s=>h('option',{value:s,key:s},t('size'+s))));
+    const reset=OfficialButton
+     ?h(OfficialButton,{variant:'outline',size:'sm',disabled:current.busy,onClick:()=>change({reset:true})},t('reset'))
+     :h('button',{type:'button',className:'wg-button',disabled:current.busy,onClick:()=>change({reset:true})},t('reset'));
+    return h('section',{className:'wg-settings','data-wg-ui':uiMode},
+     h('h2',{className:'wg-heading'},t('title')),
+     h('p',{className:'wg-intro'},t('intro')),
+     h(Row,{title:t('rowShow'),desc:status,lead:h('div',{className:'wg-thumb',role:'img','aria-label':t('pet')})},visibility),
+     h(Row,{title:t('size'),desc:t('sizeDesc')},size),
+     h(Row,{title:t('position'),desc:t('positionDesc')},reset),
+     current.error?h('div',{className:'wg-error',role:'alert'},current.error):null,
+     h('p',{className:'wg-foot'},t('hint')+' · v'+VERSION));
    };
    // 官方槽 2：侧栏底部鲸鱼按钮（DSH 官方 list slot）
    const FooterAction=(props)=>{

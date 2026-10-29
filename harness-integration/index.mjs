@@ -3,16 +3,18 @@ import {readFileSync,writeFileSync,renameSync,mkdirSync,existsSync,appendFileSyn
 import {join} from 'node:path';
 import {normalize,allowed,LOCAL_HOST} from './controller.mjs';
 export const name='whale-desktop-integration';
-export const version='1.1.5';
+export const version='1.1.6';
 // v1.1.0：不再硬依赖 whale-girl.pet 服务——whale-girl 插件缺失、更新改名或加载失败时，本插件仍会加载，
 // 设置页/侧栏按钮可用并显示可读错误；启动失败会每 5s 自动重试，Harness 更新后不需要手动点两次。
 export const inject=['webServer'];
 const CLIENT_MENUS=new Set(['pending','ok','no-menu','failed','unsupported']);
+const CLIENT_UI=new Set(['official','partial','fallback']);
 export function normalizeClient(input){
  if(!input||typeof input!=='object'||Array.isArray(input))throw Error('Invalid client status');
  const next={};
  if(input.loaded!==undefined){if(typeof input.loaded!=='boolean')throw Error('Invalid client.loaded');next.loaded=input.loaded;}
  if(input.menu!==undefined){if(typeof input.menu!=='string'||!CLIENT_MENUS.has(input.menu))throw Error('Invalid client.menu');next.menu=input.menu;}
+ if(input.ui!==undefined){if(typeof input.ui!=='string'||!CLIENT_UI.has(input.ui))throw Error('Invalid client.ui');next.ui=input.ui;}
  if(input.version!==undefined){if(typeof input.version!=='string'||input.version.length>24)throw Error('Invalid client.version');next.version=input.version;}
  if(input.lang!==undefined){if(typeof input.lang!=='string'||input.lang.length>16)throw Error('Invalid client.lang');next.lang=input.lang;}
  if(input.at!==undefined){if(!Number.isFinite(input.at))throw Error('Invalid client.at');next.at=input.at;}

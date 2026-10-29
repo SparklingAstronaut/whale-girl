@@ -6,6 +6,7 @@ Windows integration for [vlln/whale-girl](https://github.com/vlln/whale-girl). T
 
 - Show or hide the desktop pet from the whale button at the bottom of the Harness sidebar, or from Settings → 虚拟宠物.
 - Desktop pet UI matching the web pet: hover for the status card (level, tasks, latest memory), click for the 喂食 / 玩耍 / 更换 menu, reply bubble and hearts above the pet.
+- Settings page laid out like the built-in Harness settings, using the official Switch, SegmentedControl and Button components (falls back to its own controls if they are unavailable).
 - Four sizes, saved position and position reset; transparent areas never block clicks.
 - Saved visibility; the companion exits when its Harness host process exits.
 
