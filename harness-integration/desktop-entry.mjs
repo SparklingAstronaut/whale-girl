@@ -5,6 +5,9 @@ import {runDesktop} from './lib/render/window.mjs';
 import {loadConfig} from './lib/src/config.mjs';
 const root=import.meta.dirname;
 const prefsPath=join(root,'integration.json'),positionPath=join(root,'position.json');
+// 专属应用名和数据目录：默认的 %APPDATA%\Electron 太通用，别的 Electron 程序可能抢走单实例锁导致桌宠直接退出
+app.setName('WhaleGirlDesktop');
+app.setPath('userData',join(app.getPath('appData'),'WhaleGirlDesktop'));
 const hostPid=Number(process.env.WHALE_GIRL_HOST_PID);
 if(!Number.isSafeInteger(hostPid)||hostPid<1)throw Error('Harness parent process required');
 if(!app.requestSingleInstanceLock()){app.quit();}else{
@@ -16,7 +19,7 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
    const next=JSON.parse(readFileSync(prefsPath,'utf8'));
    if(!next.visible){app.quit();return;}
    if(window&&!window.isDestroyed()){
-    if(next.size!==settings.size){const zoom=next.size/110;window.webContents.setZoomFactor(zoom);window.setSize(Math.ceil(150*zoom),Math.ceil(150*zoom));}
+    if(next.size!==settings.size){const zoom=next.size/110;window.webContents.setZoomFactor(zoom);window.setSize(Math.ceil(240*zoom),Math.ceil(260*zoom));}
     if(next.resetAt!==lastReset){lastReset=next.resetAt;reset();}
    }
    settings=next;

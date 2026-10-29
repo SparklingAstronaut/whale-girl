@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src data:; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>whale-girl 桌面伴侣</title>
+  <style>
+    /* 布局对齐网页版 whale-girl：互动菜单在宠物上方、状态卡在宠物下方、回话气泡在上方。
+       窗口比宠物大（见 lib/render/window.mjs 的 WINDOW_W/H），浮层画在窗口的透明边距里；
+       点击穿透由 renderer.js 按鼠标位置动态切换，透明区域不挡桌面。 */
+    :root { --pet: 110px; }
+    html, body {
+      margin: 0; padding: 0; overflow: hidden;
+      background: transparent !important;
+      width: 100vw; height: 100vh;
+      user-select: none; -webkit-user-select: none;
+      font-family: system-ui, sans-serif;
+    }
+    #stage {
+      position: fixed; inset: 0;
+      display: grid; place-items: center;
+      pointer-events: none;
+      touch-action: none;
+    }
+    canvas {
+      pointer-events: auto;
+      cursor: grab;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,.25));
+    }
+    canvas:active { cursor: grabbing; }
+
+    #effects {
+      position: fixed; left: 50%; top: 50%;
+      width: var(--pet); height: var(--pet);
+      transform: translate(-50%, -50%);
+      pointer-events: none; overflow: visible; z-index: 4;
+    }
+    .pet-heart { position: absolute; font-size: 20px; line-height: 1; pointer-events: none; }
+
+    /* 状态卡（与网页版 .pet-status 同样式） */
+    .pet-status {
+      position: fixed; left: 50%; top: calc(50% + var(--pet) / 2 + 18px);
+      transform: translateX(-50%);
+      box-sizing: border-box;
+      width: max-content; min-width: 96px; max-width: calc(100vw - 24px);
+      padding: 5px 8px;
+      background: rgba(27,30,40,.94);
+      backdrop-filter: blur(10px) saturate(1.15);
+      border: 1px solid rgba(255,255,255,.10); border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.38), 0 3px 8px rgba(0,0,0,.28);
+      color: #E8EBF2; font-size: 11px;
+      display: grid; gap: 4px; z-index: 5;
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity .15s ease-out, visibility 0s linear .2s;
+    }
+    .pet-status.show {
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transition: opacity .2s cubic-bezier(.16,1,.3,1);
+      transition-delay: .06s;
+    }
+    .pet-status::after {
+      content: ''; position: absolute; left: 50%; top: -5px; width: 10px; height: 10px;
+      transform: translateX(-50%) rotate(45deg); background: rgba(27,30,40,.94);
+      border-top: 1px solid rgba(255,255,255,.10); border-left: 1px solid rgba(255,255,255,.10);
+      border-top-left-radius: 3px;
+    }
+    .pet-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .pet-lv {
+      background: rgba(86,134,254,.16); color: #B7C8FE; border-radius: 5px;
+      padding: 2px 6px; font-size: 10px; font-weight: 600; line-height: 16px; white-space: nowrap;
+    }
+    .pet-stats { color: #E8EBF2; font-size: 11px; line-height: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .pet-note {
+      color: #E8EBF2; font-size: 11px; line-height: 15px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;
+    }
+
+    /* 互动菜单（与网页版 .pet-menu 同样式） */
+    .pet-menu {
+      position: fixed; left: 50%; top: calc(50% - var(--pet) / 2 - 12px);
+      transform: translate(-50%, -100%);
+      display: none; width: max-content; gap: 6px; padding: 6px;
+      border-radius: 8px; background: rgba(20,20,28,.72);
+      z-index: 6; pointer-events: auto;
+    }
+    .pet-menu.open { display: flex; }
+    .pet-menu button {
+      flex: 1; border: 0; border-radius: 6px; padding: 4px 8px;
+      font-size: 11px; cursor: pointer; white-space: nowrap;
+      background: rgba(255,255,255,.14); color: #E8EBF2; font-family: system-ui, sans-serif;
+    }
+    .pet-menu button:hover { background: rgba(255,255,255,.28); }
+
+    /* 回话气泡（与网页版 .pet-bubble 同样式，位于宠物上方） */
+    #bubble {
+      position: fixed; left: 50%; top: calc(50% - var(--pet) / 2 - 8px);
+      transform: translate(-50%, -100%);
+      max-width: calc(100vw - 16px); overflow: hidden; text-overflow: ellipsis;
+      background: rgba(24,28,38,.94); color: #E8EBF2;
+      font-size: 11px; padding: 4px 8px; border-radius: 10px;
+      white-space: nowrap; opacity: 0; pointer-events: none;
+      transition: opacity .18s ease-out; z-index: 7;
+    }
+    #bubble.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="pet" width="110" height="110"></canvas>
+  </div>
+  <div id="effects"></div>
+  <div id="menu" class="pet-menu" role="menu" aria-label="互动菜单">
+    <button type="button" data-action="feed">🍗 喂食</button>
+    <button type="button" data-action="play">🎾 玩耍</button>
+    <button type="button" data-action="role">🎭 更换</button>
+  </div>
+  <div id="status" class="pet-status" role="status">
+    <div class="pet-meta"><span class="pet-lv">Lv.1</span><span class="pet-stats">0 任务</span></div>
+    <div class="pet-note">…</div>
+  </div>
+  <div id="bubble"></div>
+  <script src="./tauri-bridge.js"></script>
+  <script src="./renderer.js"></script>
+</body>
+</html>

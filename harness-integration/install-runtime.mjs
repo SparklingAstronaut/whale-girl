@@ -8,6 +8,8 @@ const root=resolve(process.argv[2]||join(process.env.LOCALAPPDATA,'Programs','Wh
 const source=resolve(import.meta.dirname,'..','desktop');
 mkdirSync(root,{recursive:true});
 for(const directory of ['lib','render'])cpSync(join(source,directory),join(root,directory),{recursive:true});
+// Desktop UI matching the web pet (menu above, status card below), click-through and the walking fix.
+cpSync(join(import.meta.dirname,'runtime-overrides'),root,{recursive:true});
 cpSync(join(import.meta.dirname,'desktop-entry.mjs'),join(root,'integration-entry.mjs'));
 writeFileSync(join(root,'package.json'),JSON.stringify({name:'whale-girl-desktop-runtime',version:'1.0.0',private:true,type:'module',dependencies:{electron:'45.1.0'}},null,2));
 if(!existsSync(join(root,'integration.json')))writeFileSync(join(root,'integration.json'),JSON.stringify({visible:true,size:110,resetAt:0}));
